@@ -41,9 +41,9 @@ const CounterDisplay = ({ target, suffix, isVisible }) => {
 };
 
 const stats = [
-  { label: "User Active", value: 280, suffix: "+" },
-  { label: "Trusted by Company", value: 128, suffix: "+" },
-  { label: "Transaction", value: 3.5, suffix: "M+" },
+  { label: "User Active", value: 98, suffix: "+" },
+  { label: "Trusted by Company", value: 89, suffix: "+" },
+  { label: "Transaction", value: 2.5, suffix: "M+" },
 ];
 
 export default function Hero({ introDone = true }) {
@@ -102,8 +102,9 @@ export default function Hero({ introDone = true }) {
                   },
                 },
               }}
-              className="text-7xl md:text-[7rem] font-bold font-sans tracking-tighter mb-4 leading-[0.80] text-white"
+              className="text-7xl md:text-[7rem] font-bold font-sans tracking-tighter mb-4 leading-[0.80] text-gradient-to-r from-blue-400 via-cyan-300 to-blue-500"
             >
+              
               {"D - Create Empire".split("").map((char, i) => (
                 <Motion.span
                   key={i}
