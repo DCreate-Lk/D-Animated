@@ -5,10 +5,8 @@ import {
   FaArrowRight,
   FaChevronLeft,
   FaChevronRight,
-  FaCheckCircle,
   FaShieldAlt,
   FaStar,
-  FaCogs,
   FaRocket,
   FaUsers,
   FaClipboardCheck,
@@ -21,508 +19,701 @@ import { useState, useEffect, useMemo } from "react";
 import { getServiceBySlug } from "../data/services";
 import { projects } from "../data/projects";
 
-const premiumSpring = { type: "spring", stiffness: 110, damping: 18, mass: 0.9 };
+/* ═══════════════════════════════════════════
+   ANIMATION PRESETS
+═══════════════════════════════════════════ */
+const spring = { type: "spring", stiffness: 100, damping: 20, mass: 1 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: premiumSpring },
+  hidden: { opacity: 0, y: 28 },
+  show:   { opacity: 1, y: 0, transition: { ...spring } },
 };
 
-const staggerContainer = {
+const stagger = {
   hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.12,
-    },
-  },
+  show:   { transition: { staggerChildren: 0.1 } },
 };
 
-const cardLift = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: premiumSpring },
+const cardIn = {
+  hidden: { opacity: 0, y: 20 },
+  show:   { opacity: 1, y: 0, transition: spring },
 };
 
-const defaultQualityStats = [
-  { label: "Quality Control", value: "99.9%", icon: FaShieldAlt },
-  { label: "Client Satisfaction", value: "100%", icon: FaStar },
-  { label: "On-Time Delivery", value: "24/7", icon: FaClock },
-  { label: "Support Standard", value: "Premium", icon: FaAward },
+/* ═══════════════════════════════════════════
+   DEFAULTS
+═══════════════════════════════════════════ */
+const defaultStats = [
+  { label: "Quality Control",     value: "99.9%",   icon: FaShieldAlt },
+  { label: "Client Satisfaction", value: "100%",    icon: FaStar      },
+  { label: "On-Time Delivery",    value: "24 / 7",  icon: FaClock     },
+  { label: "Support Standard",    value: "Premium", icon: FaAward     },
 ];
 
-const defaultServicePoints = [
+const defaultPoints = [
   {
-    title: "Strategic planning",
-    desc: "A focused roadmap aligned with your goals, audience, and growth direction.",
-    icon: FaRegLightbulb,
+    title: "Strategic Planning",
+    desc:  "A focused roadmap aligned with your goals, audience, and growth direction.",
+    icon:  FaRegLightbulb,
   },
   {
-    title: "High-performance delivery",
-    desc: "Fast, stable, and scalable execution designed for modern business needs.",
-    icon: FaRocket,
+    title: "High-Performance Delivery",
+    desc:  "Fast, stable, and scalable execution designed for modern business needs.",
+    icon:  FaRocket,
   },
   {
-    title: "Quality assurance",
-    desc: "Testing, review, and refinement at every stage for a polished outcome.",
-    icon: FaClipboardCheck,
+    title: "Quality Assurance",
+    desc:  "Testing, review, and refinement at every stage for a polished outcome.",
+    icon:  FaClipboardCheck,
   },
   {
-    title: "Future-ready architecture",
-    desc: "Built to grow with your business, brand, and digital operations.",
-    icon: FaLayerGroup,
+    title: "Future-Ready Architecture",
+    desc:  "Built to grow with your business, brand, and digital operations.",
+    icon:  FaLayerGroup,
   },
 ];
 
+/* ═══════════════════════════════════════════
+   AMBIENT BACKGROUND
+═══════════════════════════════════════════ */
+function AmbientBg() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div className="absolute -top-[20%] left-1/2 h-[60vh] w-[60vh] -translate-x-1/2
+                      rounded-full bg-violet-600/[0.11] blur-[160px]" />
+      <div className="absolute right-[8%] top-[35%] h-[38vh] w-[38vh] rounded-full
+                      bg-blue-600/[0.07] blur-[130px]" />
+      <div className="absolute bottom-[8%] left-[6%] h-[28vh] w-[28vh] rounded-full
+                      bg-indigo-500/[0.06] blur-[110px]" />
+      {/* dot grid */}
+      <div
+        className="absolute inset-0 opacity-[0.045]"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "52px 52px",
+        }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   STAT CARD
+═══════════════════════════════════════════ */
+function StatCard({ item }) {
+  const Icon = item.icon;
+  return (
+    <Motion.div
+      variants={cardIn}
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.08]
+                 bg-white/[0.03] p-5 backdrop-blur-xl transition-all duration-300
+                 hover:border-white/[0.14] hover:bg-white/[0.055]"
+    >
+      <div className="pointer-events-none absolute left-0 right-0 top-0 h-px
+                      bg-gradient-to-r from-transparent via-white/20 to-transparent
+                      opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+            {item.label}
+          </p>
+          <p className="mt-2 text-[22px] font-bold tracking-tight text-white">
+            {item.value}
+          </p>
+        </div>
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center
+                        rounded-xl border border-white/[0.08] bg-white/[0.05]
+                        text-white/60 transition-all duration-300
+                        group-hover:border-white/[0.18] group-hover:text-white">
+          <Icon size={15} />
+        </div>
+      </div>
+    </Motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SERVICE POINT CARD
+═══════════════════════════════════════════ */
+function ServicePointCard({ item }) {
+  const Icon = item.icon;
+  return (
+    <Motion.div
+      variants={cardIn}
+      whileHover={{ y: -5, transition: { duration: 0.28 } }}
+      className="group relative overflow-hidden rounded-[22px] border border-white/[0.07]
+                 bg-[#0d0d10] p-6 transition-all duration-300
+                 hover:border-white/[0.13] hover:bg-[#111116]"
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity
+                      duration-500 group-hover:opacity-100">
+        <div className="absolute -inset-2 bg-gradient-to-br from-white/[0.04]
+                        via-transparent to-white/[0.02] blur-2xl" />
+      </div>
+      <div className="pointer-events-none absolute left-0 right-0 top-0 h-px
+                      bg-gradient-to-r from-transparent via-white/[0.14] to-transparent
+                      opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+      <div className="relative z-10">
+        <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl
+                        border border-white/[0.08] bg-white/[0.05] text-white/60
+                        transition-all duration-300 group-hover:border-white/[0.16]
+                        group-hover:bg-white/[0.09] group-hover:text-white">
+          <Icon size={17} />
+        </div>
+        <h3 className="mb-2.5 text-[14px] font-bold tracking-tight text-white sm:text-[15px]">
+          {item.title}
+        </h3>
+        <p className="text-[12px] leading-[1.8] text-white/45 sm:text-[13px]">
+          {item.desc}
+        </p>
+      </div>
+    </Motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SECTION TITLE
+═══════════════════════════════════════════ */
 function SectionTitle({ eyebrow, title, desc }) {
   return (
-    <div className="mb-8 max-w-3xl">
+    <div className="mb-12">
       {eyebrow && (
-        <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.35em] text-white/45">
+        <Motion.p
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="mb-4 text-[10px] font-bold uppercase tracking-[0.32em] text-white/30"
+        >
           {eyebrow}
-        </p>
+        </Motion.p>
       )}
-      <h2 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+      <Motion.h2
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, delay: 0.07 }}
+        viewport={{ once: true }}
+        className="text-[26px] font-bold tracking-[-0.03em] text-white
+                   sm:text-[34px] md:text-[42px]"
+      >
         {title}
-      </h2>
+      </Motion.h2>
       {desc && (
-        <p className="mt-4 text-base leading-relaxed text-white/60 md:text-lg">
+        <Motion.p
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.14 }}
+          viewport={{ once: true }}
+          className="mt-4 max-w-2xl text-[14px] leading-[1.9] text-white/40
+                     sm:text-[16px]"
+        >
           {desc}
-        </p>
+        </Motion.p>
       )}
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════
+   PROJECT CAROUSEL  (hero right panel)
+═══════════════════════════════════════════ */
+function ProjectCarousel({ projects: list }) {
+  const [slide, setSlide] = useState(0);
 
-function StatCard({ item }) {
-  const Icon = item.icon;
+  const next = () => setSlide((p) => (list.length ? (p + 1) % list.length : 0));
+  const prev = () =>
+    setSlide((p) => (list.length ? (p - 1 + list.length) % list.length : 0));
+
+  const current = list[slide] ?? null;
+
   return (
     <Motion.div
-      variants={cardLift}
-      className="group rounded-[20px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.25)] transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]"
+      initial={{ opacity: 0, scale: 0.95, y: 24 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ ...spring, delay: 0.18 }}
+      className="relative overflow-hidden rounded-[32px] border border-white/[0.09]
+                 bg-white/[0.03] p-2.5 shadow-[0_40px_120px_rgba(0,0,0,0.65)]
+                 backdrop-blur-2xl"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[12px] text-white/60">{item.label}</p>
-          <p className="mt-2 text-[15px] font-semibold tracking-tight text-white">
-            {item.value}
-          </p>
-        </div>
-        <div className="flex py-8 h-13 w-13 items-center text-2xl justify-center rounded-xl border border-white/10 bg-white/5 text-white/90 transition-transform duration-300 group-hover:scale-105">
-          <Icon />
+      {/* image */}
+      <div className="relative overflow-hidden rounded-[24px] bg-[#0a0a0d]">
+        {current ? (
+          <AnimatePresence mode="wait">
+            <Motion.div
+              key={current.title}
+              initial={{ opacity: 0, x: 30, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -30, scale: 0.97 }}
+              transition={{ duration: 0.46, ease: [0.23, 1, 0.32, 1] }}
+              className="relative aspect-[4/5] w-full overflow-hidden lg:aspect-[5/6]"
+            >
+              <img
+                src={current.previewA}
+                alt={current.title}
+                className="h-full w-full object-cover opacity-80 transition-transform
+                           duration-700 hover:scale-[1.03]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t
+                              from-black/90 via-black/28 to-black/5" />
+
+              {/* top badges */}
+              <div className="absolute left-4 right-4 top-4 flex items-center
+                              justify-between sm:left-5 sm:right-5 sm:top-5">
+                <span className="rounded-full border border-white/[0.09] bg-black/40
+                                 px-3 py-1.5 text-[9px] font-bold uppercase
+                                 tracking-[0.18em] text-white/60 backdrop-blur-xl">
+                  Featured
+                </span>
+                <span className="rounded-full border border-white/[0.09] bg-white/[0.07]
+                                 px-3 py-1.5 text-[9px] font-bold uppercase
+                                 tracking-[0.18em] text-white/70 backdrop-blur-xl">
+                  Quality-Checked
+                </span>
+              </div>
+
+              {/* bottom info */}
+              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full
+                                border border-white/[0.09] bg-white/[0.06] px-3 py-1.5
+                                text-[10px] font-semibold text-white/65 backdrop-blur-xl">
+                  <FaShieldAlt className="text-emerald-400" size={9} />
+                  Built with premium standards
+                </div>
+                <h3 className="text-[18px] font-bold tracking-tight text-white sm:text-[22px]">
+                  {current.title}
+                </h3>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-white/50 sm:text-[13px]">
+                  {current.metric}
+                </p>
+              </div>
+            </Motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="flex aspect-[4/5] flex-col items-center justify-center
+                          gap-4 p-10 text-center lg:aspect-[5/6]">
+            <FaLayerGroup size={28} className="text-white/20" />
+            <p className="text-[13px] text-white/35">No related projects yet.</p>
+          </div>
+        )}
+      </div>
+
+      {/* controls */}
+      <div className="mt-2.5 flex items-center justify-between px-1.5 pb-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">
+          {list.length ? `${slide + 1} / ${list.length}` : "—"}
+        </span>
+        <div className="flex items-center gap-2">
+          {[
+            { fn: prev, Icon: FaChevronLeft },
+            { fn: next, Icon: FaChevronRight },
+          ].map(({ fn, Icon }, i) => (
+            <button
+              key={i}
+              onClick={fn}
+              disabled={!list.length}
+              className="flex h-9 w-9 items-center justify-center rounded-full
+                         border border-white/[0.08] bg-white/[0.04] text-white/55
+                         transition-all duration-300 hover:border-white/[0.16]
+                         hover:bg-white/[0.09] hover:text-white
+                         disabled:cursor-not-allowed disabled:opacity-25"
+            >
+              <Icon size={10} />
+            </button>
+          ))}
         </div>
       </div>
     </Motion.div>
   );
 }
 
-function ServicePointCard({ item }) {
-  const Icon = item.icon;
-
+/* ═══════════════════════════════════════════
+   PROJECT GRID CARD
+═══════════════════════════════════════════ */
+function ProjectGridCard({ project, large = false }) {
   return (
     <Motion.div
-      variants={cardLift}
-      whileHover={{ y: -6 }}
-      className="group relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0f0f13] p-4 sm:p-6 transition-all duration-300 hover:border-white/20 hover:bg-[#14141a]"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ ...spring, duration: 0.65 }}
+      className={`group relative overflow-hidden border border-white/[0.07]
+                  bg-[#0b0b0e] ${large ? "rounded-[28px]" : "rounded-[22px]"}`}
     >
-      {/* Glow effect */}
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute -inset-1 bg-gradient-to-br from-white/10 via-transparent to-white/5 blur-xl" />
-      </div>
-
-      <div className="flex items-start justify-between gap-10 relative">
-          {/* Icon */}
-        <div className="relative mb-2 flex h-17 w-27 sm:h-15 sm:w-15 items-center justify-center rounded-xl bg-white/5 text-white/80 ring-1 ring-white/10 transition-all duration-300 group-hover:scale-110 group-hover:bg-white/10">
-          <Icon className="text-3xl sm:text-3xl" />
-        </div>
-        <div>
-            {/* Title */}
-          <h3 className="relative text-sm sm:text-lg font-semibold text-white">
-            {item.title}
-          </h3>
-
-          {/* Description */}
-          <p className="relative mt-2 text-xs sm:text-sm leading-5 text-white/60">
-            {item.desc}
-          </p>
-        </div>
+      <img
+        src={project.previewA}
+        alt={project.title}
+        className={`w-full object-cover opacity-50 transition-all duration-700
+                    group-hover:opacity-65 group-hover:scale-[1.04]
+                    ${large
+                      ? "h-[320px] sm:h-[400px] lg:h-full lg:min-h-[480px]"
+                      : "h-[200px] sm:h-[230px]"
+                    }`}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/92
+                      via-black/25 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+        <span className="mb-3 inline-flex rounded-full border border-white/[0.09]
+                         bg-white/[0.07] px-3 py-1 text-[9px] font-bold uppercase
+                         tracking-[0.2em] text-white/60 backdrop-blur-xl">
+          {project.tags?.[0] ?? "Premium Work"}
+        </span>
+        <h3 className={`mt-2 font-bold tracking-tight text-white
+                        ${large
+                          ? "text-[20px] sm:text-[26px]"
+                          : "text-[15px] sm:text-[17px]"
+                        }`}>
+          {project.title}
+        </h3>
+        <p className="mt-2 text-[12px] leading-relaxed text-white/45 sm:text-[13px]">
+          {project.metric}
+        </p>
       </div>
     </Motion.div>
   );
 }
 
+/* ═══════════════════════════════════════════
+   CTA SECTION
+═══════════════════════════════════════════ */
+function CTASection() {
+  return (
+    <section className="relative z-10 overflow-hidden px-5 py-24 sm:px-8 md:py-32">
+      {/* edge rule */}
+      <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center">
+        <div className="h-px w-2/5 bg-gradient-to-r from-transparent
+                        via-white/[0.07] to-transparent" />
+      </div>
+
+      {/* glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-1/2 h-[480px] w-[680px]
+                        -translate-x-1/2 -translate-y-1/2 rounded-full
+                        bg-blue-600/[0.06] blur-[150px]" />
+        <div className="absolute left-1/2 top-1/2 h-[200px] w-[300px]
+                        -translate-x-1/2 -translate-y-1/2 rounded-full
+                        bg-indigo-500/[0.07] blur-[80px]" />
+      </div>
+
+      <Motion.div
+        initial={{ opacity: 0, y: 36 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: true }}
+        className="relative mx-auto max-w-4xl overflow-hidden rounded-[32px] border
+                   border-white/[0.08] bg-white/[0.03] p-8 text-center
+                   shadow-[0_32px_100px_rgba(0,0,0,0.55)] backdrop-blur-2xl
+                   sm:p-14 md:rounded-[48px] md:p-20"
+      >
+        {/* glass overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05]
+                        via-transparent to-white/[0.02]" />
+
+        <div className="relative z-10">
+          {/* icon */}
+          <div className="mx-auto mb-8 flex h-14 w-14 items-center justify-center
+                          rounded-2xl border border-white/[0.1] bg-white/[0.06]
+                          text-white/75 backdrop-blur-xl">
+            <FaUsers size={19} />
+          </div>
+
+          <h2 className="text-[28px] font-bold tracking-[-0.03em] text-white
+                         sm:text-[40px] md:text-[52px] md:leading-[1.08]">
+            Ready to build something{" "}
+            <span className="bg-gradient-to-r from-white to-white/50 bg-clip-text text-transparent">
+              exceptional?
+            </span>
+          </h2>
+
+          <p className="mx-auto mt-6 max-w-xl text-[14px] leading-[1.9]
+                        text-white/40 sm:text-[16px]">
+            Let us transform your vision into a refined digital experience —
+            crafted with precision, performance, and world-class design.
+          </p>
+
+          <Motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            className="group relative mt-10 inline-flex h-12 items-center
+                       justify-center overflow-hidden rounded-full bg-white px-9
+                       text-[13px] font-bold text-black
+                       shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-shadow
+                       duration-300 hover:shadow-[0_0_60px_rgba(255,255,255,0.2)]"
+          >
+            {/* shine sweep */}
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r
+                             from-transparent via-white/40 to-transparent
+                             transition-transform duration-700 group-hover:translate-x-full" />
+            <span className="relative z-10 flex items-center gap-2">
+              Start a Conversation
+              <FaArrowRight
+                size={11}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
+            </span>
+          </Motion.button>
+        </div>
+      </Motion.div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE STICKY BAR
+═══════════════════════════════════════════ */
+function MobileBar() {
+  const scrollToContact = () =>
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+
+  return (
+    <div className="fixed bottom-4 left-4 right-4 z-[100] md:hidden">
+      <div className="flex items-center justify-between rounded-full border
+                      border-white/[0.09] bg-black/55 p-1.5 pl-5
+                      shadow-[0_8px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+        <span className="text-[12px] font-semibold text-white/60">
+          Ready to start?
+        </span>
+        <button
+          onClick={scrollToContact}
+          className="h-9 rounded-full bg-white px-5 text-[11px] font-bold
+                     uppercase tracking-wide text-black transition-all duration-300
+                     hover:bg-blue-500 hover:text-white active:scale-95"
+        >
+          Contact Us
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   BACK BUTTON  (floating — replaces nav)
+═══════════════════════════════════════════ */
+function BackButton() {
+  const navigate = useNavigate();
+  return (
+    <Motion.button
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      onClick={() => navigate(-1)}
+      className="group mb-10 inline-flex items-center gap-3 text-[12px] font-bold
+                 uppercase tracking-[0.22em] text-white/40 transition-colors
+                 duration-300 hover:text-white/80 md:mb-14"
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-full
+                       border border-white/[0.1] bg-white/[0.05] transition-all
+                       duration-300 group-hover:border-white/[0.2]
+                       group-hover:bg-white/[0.09]">
+        <FaArrowLeft
+          size={11}
+          className="transition-transform duration-300 group-hover:-translate-x-0.5"
+        />
+      </span>
+      Back
+    </Motion.button>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════ */
 export default function ServiceDetail() {
   const { slug } = useParams();
-  const navigate = useNavigate();
-  const service = getServiceBySlug(slug);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const service  = getServiceBySlug(slug);
 
   const relatedProjects = useMemo(() => {
     if (!service?.relatedProjects?.length) return [];
-    return projects.filter((project) =>
-      service.relatedProjects.includes(project.title)
-    );
+    return projects.filter((p) => service.relatedProjects.includes(p.title));
   }, [service]);
 
-  const qualityStats = service?.qualityStats?.length
-    ? service.qualityStats
-    : defaultQualityStats;
-
-  const servicePoints = service?.servicePoints?.length
-    ? service.servicePoints
-    : defaultServicePoints;
+  const qualityStats  = service?.qualityStats?.length  ? service.qualityStats  : defaultStats;
+  const servicePoints = service?.servicePoints?.length ? service.servicePoints : defaultPoints;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [slug]);
 
-  if (!service) {
-    return <div className="min-h-screen bg-black" />;
-  }
-
-  const nextSlide = () => {
-    if (!relatedProjects.length) return;
-    setCurrentSlide((prev) => (prev === relatedProjects.length - 1 ? 0 : prev + 1));
-  };
-
-  const prevSlide = () => {
-    if (!relatedProjects.length) return;
-    setCurrentSlide((prev) => (prev === 0 ? relatedProjects.length - 1 : prev - 1));
-  };
-
-  const currentProject = relatedProjects.length
-    ? relatedProjects[currentSlide % relatedProjects.length]
-    : null;
-
-  const scrollToContact = () => {
-    document.getElementById("contact")?.scrollIntoView({
-      behavior: "smooth",
-    });
-  };
-
+  if (!service) return <div className="min-h-screen bg-[#050505]" />;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050505] font-sans text-[#f5f5f7] selection:bg-white/30">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(88,80,255,0.18),transparent_55%),radial-gradient(ellipse_40%_30%_at_80%_20%,rgba(255,255,255,0.05),transparent_60%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] bg-[size:72px_72px]" />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050505]
+                    font-sans text-[#f0f0f2] selection:bg-white/20">
+      <AmbientBg />
 
-      <nav className="fixed top-0 z-[100] w-full border-b border-white/[0.05] bg-black/45 backdrop-blur-3xl supports-[backdrop-filter]:bg-black/25">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-10">
-          <button
-            onClick={() => navigate(-1)}
-            className="group flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/55 transition-all hover:text-white"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors group-hover:bg-white/10">
-              <FaArrowLeft className="transition-transform group-hover:-translate-x-0.5" />
-            </span>
-            <span className="hidden sm:block">Back</span>
-          </button>
-
-          <div className="max-w-[50vw] truncate text-[10px] font-bold uppercase tracking-[0.35em] text-white/45">
-            {service.name}
-          </div>
-        </div>
-      </nav>
-
-      <section className="relative px-4 pb-12 pt-28 md:px-10 md:pt-40">
+      {/* ── HERO ── */}
+      <section className="relative z-10 px-5 pb-20 pt-16 sm:px-8 sm:pt-20
+                          md:px-12 md:pt-24 lg:pt-28">
         <div className="mx-auto max-w-7xl">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+
+          {/* back button — inline, no navbar */}
+          <BackButton />
+
+          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]
+                          lg:gap-16 xl:gap-24">
+
+            {/* LEFT — text */}
             <Motion.div
-              variants={staggerContainer}
+              variants={stagger}
               initial="hidden"
               animate="show"
-              className="relative z-10"
+              className="flex flex-col"
             >
+              {/* category pill */}
               <Motion.div variants={fadeUp}>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_20px_rgba(74,222,128,0.8)]" />
-                  {service.category || "Premium Service"}
+                <span className="inline-flex items-center gap-2.5 rounded-full border
+                                 border-white/[0.09] bg-white/[0.04] px-4 py-2
+                                 text-[10px] font-bold uppercase tracking-[0.26em]
+                                 text-white/55 backdrop-blur-xl">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400
+                                   shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                  {service.category ?? "Premium Service"}
                 </span>
               </Motion.div>
 
+              {/* headline */}
               <Motion.h1
                 variants={fadeUp}
-                className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-7xl xl:text-[5.8rem] xl:leading-[0.95]"
+                className="mt-6 text-[42px] font-bold leading-[0.92] tracking-[-0.04em]
+                           text-white sm:text-[56px] md:text-[68px] lg:text-[76px]
+                           xl:text-[88px]"
               >
                 {service.name}
               </Motion.h1>
 
+              {/* description */}
               <Motion.p
                 variants={fadeUp}
-                className="mt-6 max-w-2xl text-base leading-8 text-white/60 md:text-xl"
+                className="mt-6 max-w-xl text-[14px] leading-[1.9] text-white/42
+                           sm:text-[16px]"
               >
                 {service.description}
               </Motion.p>
 
-              <Motion.div variants={fadeUp} className="mt-8 flex flex-col gap-4 grid grid-cols-2 sm:flex-row">
-                <button className="inline-flex h-10 items-center justify-center rounded-full bg-white px-8 text-sm font-bold text-black transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_45px_rgba(255,255,255,0.18)]">
+              {/* CTAs */}
+              <Motion.div
+                variants={fadeUp}
+                className="mt-9 flex flex-col gap-3 sm:flex-row"
+              >
+                <button className="inline-flex h-11 items-center justify-center
+                                   rounded-full bg-white px-8 text-[13px] font-bold
+                                   text-black shadow-[0_0_40px_rgba(255,255,255,0.13)]
+                                   transition-all duration-300 hover:bg-blue-500
+                                   hover:text-white active:scale-95">
                   Start Project
                 </button>
-                <button className="inline-flex h-10 items-center justify-center rounded-full border border-white/10 bg-white/5 px-8 text-[13px] font-bold text-white backdrop-blur-xl transition-all hover:bg-white/10">
-                  Explore Projucts
+                <button className="inline-flex h-11 items-center justify-center gap-2
+                                   rounded-full border border-white/[0.1] bg-white/[0.04]
+                                   px-8 text-[13px] font-bold text-white/75 backdrop-blur-xl
+                                   transition-all duration-300 hover:border-white/[0.18]
+                                   hover:bg-white/[0.08] hover:text-white active:scale-95">
+                  Explore Projects
+                  <FaArrowRight size={11} />
                 </button>
               </Motion.div>
 
+              {/* stats */}
               <Motion.div
-                variants={fadeUp}
-                className="mt-10 grid gap-2 grid-cols-2 sm:grid-cols-2 xl:grid-cols-2"
+                variants={stagger}
+                className="mt-10 grid grid-cols-2 gap-3"
               >
-                {qualityStats.map((item, idx) => (
-                  <StatCard key={idx} item={item} />
+                {qualityStats.map((item, i) => (
+                  <StatCard key={i} item={item} />
                 ))}
               </Motion.div>
             </Motion.div>
 
+            {/* RIGHT — carousel */}
             <div className="relative">
-              <div className="absolute inset-0 -z-10 rounded-[40px] bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.08),transparent_58%)] blur-2xl" />
-              <Motion.div
-                initial={{ opacity: 0, scale: 0.96, y: 18 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={premiumSpring}
-                className="relative overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.03] p-3 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
-              >
-                <div className="relative overflow-hidden rounded-[28px] bg-[#0b0b0f]">
-                  {currentProject ? (
-                    <AnimatePresence mode="wait">
-                      <Motion.div
-                        key={currentProject.title}
-                        initial={{ opacity: 0, x: 30, scale: 0.98 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -30, scale: 0.98 }}
-                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                        className="relative aspect-[4/5] w-full overflow-hidden lg:aspect-[5/6]"
-                      >
-                        <img
-                          src={currentProject.previewA}
-                          alt={currentProject.title}
-                          className="h-full w-full object-cover opacity-85"
-                        />
-                        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.3)_48%,rgba(0,0,0,0.05)_100%)]" />
-
-                        <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3 sm:left-6 sm:right-6 sm:top-6">
-                          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[8px] font-bold uppercase tracking-[0.14em] text-white/70 backdrop-blur-xl sm:px-4">
-                            Featured Result
-                          </span>
-                          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[8px] font-bold uppercase tracking-[0.14em] text-white/80 backdrop-blur-xl sm:px-4">
-                            Quality-Checked
-                          </span>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 md:p-8">
-                          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-[11px] font-semibold text-white/75 backdrop-blur-xl">
-                            <FaShieldAlt className="text-emerald-400" />
-                            Built with premium quality standards
-                          </div>
-                          <h3 className="text-2xl font-semibold text-white md:text-3xl">
-                            {currentProject.title}
-                          </h3>
-                          <p className="mt-2 max-w-lg text-sm leading-6 text-white/60 md:text-base">
-                            {currentProject.metric}
-                          </p>
-                        </div>
-                      </Motion.div>
-                    </AnimatePresence>
-                  ) : (
-                    <div className="flex aspect-[4/5] items-center justify-center p-10 text-center lg:aspect-[5/6]">
-                      <div>
-                        <FaLayerGroup className="mx-auto text-4xl text-white/25" />
-                        <p className="mt-4 text-sm text-white/55">
-                          No related projects found for this service yet.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-3 px-2 pb-1">
-                  <div className="text-xs uppercase tracking-[0.25em] text-white/40">
-                    {relatedProjects.length
-                      ? `${currentSlide + 1} / ${relatedProjects.length}`
-                      : "0 / 0"}
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={prevSlide}
-                      disabled={!relatedProjects.length}
-                      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/80 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <FaChevronLeft />
-                    </button>
-                    <button
-                      onClick={nextSlide}
-                      disabled={!relatedProjects.length}
-                      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/80 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <FaChevronRight />
-                    </button>
-                  </div>
-                </div>
-              </Motion.div>
+              <div className="pointer-events-none absolute -inset-10 -z-10
+                              rounded-[60px] bg-gradient-to-br from-white/[0.04]
+                              to-transparent blur-3xl" />
+              <ProjectCarousel projects={relatedProjects} />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-16 md:px-10 md:py-24">
+      {/* ── SERVICE POINTS ── */}
+      <section className="relative z-10 px-5 py-20 sm:px-8 md:px-12 md:py-28">
+        <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center">
+          <div className="h-px w-2/5 bg-gradient-to-r from-transparent
+                          via-white/[0.07] to-transparent" />
+        </div>
         <div className="mx-auto max-w-7xl">
           <SectionTitle
             eyebrow="Service Details"
             title="What this service delivers"
-            desc="A clearer breakdown of the value, process, and results behind this offering."
+            desc="A clear breakdown of the value, process, and results behind this offering."
           />
-
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {servicePoints.map((item, idx) => (
-              <ServicePointCard key={idx} item={item} />
+          <Motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            {servicePoints.map((item, i) => (
+              <ServicePointCard key={i} item={item} />
             ))}
-          </div>
+          </Motion.div>
         </div>
       </section>
 
-      <section className="px-4 py-16 md:px-10 md:py-24">
+      {/* ── RELATED PROJECTS ── */}
+      <section className="relative z-10 px-5 py-20 sm:px-8 md:px-12 md:py-28">
+        <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center">
+          <div className="h-px w-2/5 bg-gradient-to-r from-transparent
+                          via-white/[0.07] to-transparent" />
+        </div>
         <div className="mx-auto max-w-7xl">
           <SectionTitle
             eyebrow="Selected Work"
-            title="Recent results that reflect this service"
-            desc="A premium showcase of related projects, presented in a cleaner editorial style."
+            title="Recent results for this service"
+            desc="A curated showcase of related projects, presented in editorial style."
           />
 
           {relatedProjects.length ? (
             <>
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-                {relatedProjects.slice(0, 3).map((project, idx) => (
-                  <Motion.div
-                    key={project.title}
-                    initial={{ opacity: 0, y: 24 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ ...premiumSpring, delay: idx * 0.08 }}
-                    className={`group relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0c0c10] ${
-                      idx === 0
-                        ? "min-h-[360px] lg:col-span-7 lg:row-span-2"
-                        : "min-h-[220px] lg:col-span-5"
-                    }`}
-                  >
-                    <img
-                      src={project.previewA}
-                      alt={project.title}
-                      className="absolute inset-0 h-full w-full object-cover opacity-45 transition-transform duration-1000 group-hover:scale-110 group-hover:opacity-60"
-                    />
-                    <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.92),rgba(0,0,0,0.25),rgba(0,0,0,0.05))]" />
-                    <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-                      <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/75 backdrop-blur-xl">
-                        {project.tags?.[0] || "Premium Work"}
-                      </span>
-                      <h3 className="mt-4 text-2xl font-semibold tracking-tight text-white md:text-3xl">
-                        {project.title}
-                      </h3>
-                      <p className="mt-3 max-w-xl text-sm leading-6 text-white/60 md:text-base">
-                        {project.metric}
-                      </p>
-                    </div>
-                  </Motion.div>
+              {/* bento grid */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                {relatedProjects[0] && (
+                  <div className="lg:col-span-7 lg:row-span-2">
+                    <ProjectGridCard project={relatedProjects[0]} large />
+                  </div>
+                )}
+                {relatedProjects.slice(1, 3).map((p) => (
+                  <div key={p.title} className="lg:col-span-5">
+                    <ProjectGridCard project={p} />
+                  </div>
                 ))}
               </div>
 
-              <div className="mt-5 flex justify-center md:justify-end">
-                <button className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 transition-all hover:bg-white/10">
-                  View all related work <FaArrowRight className="text-xs" />
+              <div className="mt-6 flex justify-center lg:justify-end">
+                <button className="inline-flex items-center gap-2.5 rounded-full
+                                   border border-white/[0.09] bg-white/[0.04] px-6 py-3
+                                   text-[12px] font-semibold text-white/65 backdrop-blur-xl
+                                   transition-all duration-300 hover:border-white/[0.16]
+                                   hover:bg-white/[0.08] hover:text-white">
+                  View all related work
+                  <FaArrowRight size={10} />
                 </button>
               </div>
             </>
           ) : (
-            <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-10 text-center text-white/55">
+            <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.02]
+                            p-16 text-center text-[13px] text-white/30">
               No related projects have been linked to this service yet.
             </div>
           )}
         </div>
       </section>
 
-      <section className="relative px-4 py-20 md:px-10 md:py-32 overflow-hidden">
-      
-      {/* Background Glow Effects */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 h-[400px] w-[400px] rounded-full bg-blue-400/15 blur-[120px]" />
-        <div className="absolute bottom-[-120px] right-1/3 h-[300px] w-[300px] rounded-full bg-sky-400/25 blur-[120px]" />
-      </div>
+      {/* ── CTA ── */}
+      <CTASection />
 
-      <Motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        viewport={{ once: true }}
-        className="relative mx-auto max-w-5xl overflow-hidden rounded-[32px] md:rounded-[56px] border border-white/10 bg-white/5 backdrop-blur-2xl p-8 md:p-16 text-center shadow-[0_20px_80px_rgba(0,0,0,0.6)]"
-      >
-        {/* Glass overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 opacity-60" />
-
-        {/* Content */}
-        <div className="relative z-10">
-          
-          {/* Icon */}
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white text-2xl shadow-inner shadow-white/10 backdrop-blur-md">
-            <FaUsers />
-          </div>
-
-          {/* Heading */}
-          <h2 className="mt-8 text-3xl font-semibold tracking-tight text-white md:text-6xl leading-tight">
-            Ready to build something{" "}
-            <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              exceptional?
-            </span>
-          </h2>
-
-          {/* Description */}
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-white/60 md:text-xl">
-            Let us transform your vision into a refined digital experience —
-            crafted with precision, performance, and world-class design standards.
-          </p>
-
-          {/* Button */}
-          <Motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.96 }}
-            className="group relative mt-10 inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-white px-8 text-sm font-semibold text-black shadow-lg"
-          >
-            {/* Button shine effect */}
-            <span className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
-
-            <span className="relative z-10 flex items-center gap-2">
-              Start a Conversation
-              <span className="transition-transform duration-300 group-hover:translate-x-1">
-                →
-              </span>
-            </span>
-          </Motion.button>
-        </div>
-      </Motion.div>
-    </section>
-
-      <div className="fixed bottom-5 left-0 right-0 z-[100] px-4 md:hidden">
-        <div className="flex items-center justify-between rounded-full border border-white/10 bg-white/2 p-2 pl-5 shadow-2xl backdrop-blur-xl">
-          <span className="text-xs font-semibold tracking-wide text-white/80">
-            Ready to start?
-          </span>
-          <button 
-          onClick={scrollToContact}
-          className="h-10 rounded-full bg-white px-5 text-[11px] font-bold uppercase text-black transition hover:bg-transparent hover:text-white hover:border-white">
-            Contact Us
-          </button>
-        </div>
-      </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-33.33%); }
-        }
-        .animate-scroll {
-          animation: scroll 22s linear infinite;
-        }
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-      `}} />
+      {/* ── MOBILE BAR ── */}
+      <MobileBar />
     </div>
   );
 }
